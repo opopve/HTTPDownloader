@@ -23,7 +23,7 @@ public class FileUtils {
         File fileFrom = new File(pathToLinks);
         File fileTo = new File(fileFrom.getParent() + "\\mod_" + fileFrom.getName());
         fileTo.createNewFile();
-        String line;
+        String line;//
 
         BufferedReader br = null;
         BufferedWriter bw = null;
