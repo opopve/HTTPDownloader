@@ -24,7 +24,6 @@ public class FileUtils {
         File fileTo = new File(fileFrom.getParent() + "\\mod_" + fileFrom.getName());
         fileTo.createNewFile();
         String line;
-        String line2;
 
         BufferedReader br = null;
         BufferedWriter bw = null;
