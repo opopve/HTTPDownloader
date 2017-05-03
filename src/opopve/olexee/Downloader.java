@@ -1,5 +1,8 @@
 package opopve.olexee;
 
+/**
+ * Thread downloading a file
+ */
 public class Downloader implements Runnable {
     private LinksQueue queue;
     private Statistic stat;

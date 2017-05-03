@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+/**
+ * Class that collects data from other classes and writes useful information to console.
+ */
 public class Statistic {
     private String size;
     private String totalSize;
@@ -21,15 +24,30 @@ public class Statistic {
     private boolean areDownloadsFinished = false;
     private long startTime;
 
+    /**
+     * Constructor
+     *
+     * @param outputFolder - path to log file
+     */
     public Statistic(String outputFolder) {
         this.outputFolder = outputFolder;
     }
 
+    /**
+     * gets start time
+     *
+     * @param startTime - start time from main thread
+     */
     public void setStartTime(long startTime) {
         this.startTime = startTime;
         showInfo();
     }
 
+    /**
+     * returns status of downloads
+     *
+     * @return true if all threads {@link Downloader} finished.
+     */
     public boolean getDwnlStatus() {
         return areDownloadsFinished;
     }
@@ -42,17 +60,26 @@ public class Statistic {
         }
     }
 
+    /**
+     * The method converts milliseconds to hours, minutes, seconds. Calculates speed (in Mb/s or Kb/s) from size and
+     * time. Creates row that shows size in MBytes or KBytes.
+     *
+     * @param millis - milliseconds for converting
+     */
     private void msToUsefulData(long millis) {
         int seconds = (int) (millis / 1000L);
         size = (bytesDownloaded < 1048576 ? bytesDownloaded / 1024 + " Kb" : bytesDownloaded / 1048576 + " Mb");
         totalSize = (bytesDownloaded < 1048576 ? bytesToDownload / 1024 + " Kb" : bytesToDownload / 1048576 + " Mb");
-//        size = (totalBytesDownloaded < 1048576 ? totalBytesDownloaded / 1024 + " Kb" : (float) totalBytesDownloaded / 1048576 + " Mb");
         kBPerSecond = (seconds == 0 ? 0 : ((float) bytesDownloaded / 1024 / seconds));
         h = seconds / 3600;
         m = seconds % 3600 / 60;
         s = seconds % 3600 % 60;
     }
 
+    /**
+     * Writes to console number of files to download and last file downloaded, size to download and downloaded size,
+     * average speed of download, time of downloads and progress bar.
+     */
     private void showInfo() {
         long currTime = System.currentTimeMillis() - startTime;
         msToUsefulData(currTime);
@@ -86,10 +113,18 @@ public class Statistic {
         System.out.printf(show.append(statusBar).toString(), nrOfFilesDownloaded, nrOfFilesToDwnl, size, totalSize, kBPerSecond, h, m, s, percent);
     }
 
+    /**
+     * @param nrOfFilesToDwnl - sets number of files to download
+     */
     public void setNrOfFilesToDwnl(int nrOfFilesToDwnl) {
         this.nrOfFilesToDwnl = nrOfFilesToDwnl;
     }
 
+    /**
+     * Calculates total size and number of files to download.
+     *
+     * @param linksSource - instance of class {@link LinksQueue} from which method gets links to estimate total size.
+     */
     public void setSizeAndQuantityToDownload(LinksQueue linksSource) {
         this.nrOfFilesToDwnl = linksSource.size();
         for (Pair p : linksSource) {
@@ -104,6 +139,13 @@ public class Statistic {
         }
     }
 
+    /**
+     * The method writes error description to log file.
+     *
+     * @param httpLink  - possible trouble HTTP link
+     * @param localPath - possible trouble local link
+     * @param excpMsg   - error message
+     */
     public synchronized void onError(String httpLink, String localPath, String excpMsg) {
         toLogFile.append(FileUtils.getDateTime(true))
                 .append("\tError: Can't download link '")
@@ -115,6 +157,15 @@ public class Statistic {
                 .append("\n");
     }
 
+    /**
+     * The method writes information to console and to log file.
+     *
+     * @param bytesDownloaded - size of downloaded file
+     * @param bytesAvailable  - original size of file
+     * @param httpLink - source link
+     * @param localPath - local link - destination
+     * @param nrOfFiles -
+     */
     public void onDownload(int bytesDownloaded, int bytesAvailable, String httpLink, String localPath, int nrOfFiles) {
         nrOfFilesDownloaded++;
         this.bytesDownloaded += bytesDownloaded;
@@ -135,6 +186,9 @@ public class Statistic {
         showInfo();
     }
 
+    /**
+     * Creates log file
+     */
     private void createLog() {
         FileUtils.makeLogFile(outputFolder, toLogFile);
     }

@@ -19,10 +19,22 @@ public class LinksQueue implements Iterable<Pair> {
         return new LinksQueueIterator(queue);
     }
 
+    /**
+     * The method returns length of the queue
+     *
+     * @return int
+     */
     public int size() {
         return queue.size();
     }
 
+    /**
+     * The method adds HTTP link to file source and local link for output to instance of class {@link Pair}
+     * and then to the queue.
+     *
+     * @param httpLink  - HTTP link to file source
+     * @param localLink - local link for output
+     */
     public void add(String httpLink, String localLink) {
 
         Pair newPair = new Pair(httpLink, localLink);
@@ -56,10 +68,17 @@ public class LinksQueue implements Iterable<Pair> {
         }
     }
 
+    /**
+     * The method returns instance of the class.
+     */
+
     public ArrayList<Pair> getQueue() {
         return queue;
     }
 
+    /**
+     * Writes all elements of the queue to console
+     */
     public void queueToDisplay() {
         if (queue.isEmpty()) {
             throw new NoSuchElementException();
