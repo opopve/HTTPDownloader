@@ -109,7 +109,6 @@ public class Statistic {
             statusBar = "[ X X X X X X X X X X ]";
         }
         System.out.print("\r");
-        System.out.print("\r");
         System.out.printf(show.append(statusBar).toString(), nrOfFilesDownloaded, nrOfFilesToDwnl, size, totalSize, kBPerSecond, h, m, s, percent);
     }
 
