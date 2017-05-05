@@ -37,12 +37,13 @@ public class LinksQueue implements Iterable<Pair> {
      */
     public void add(String httpLink, String localLink) {
 
-        Pair newPair = new Pair(httpLink, localLink);
+        Pair newPair = new Pair(httpLink, localLink.toUpperCase());
         if (!queue.isEmpty()) {
             for (int i = 0; i < queue.size(); i++) {
                 Pair curPair = queue.get(i);
                 if (curPair.getLink().equals(newPair.getLink())) {
-                    curPair.addDestination(localLink);
+                    if (!curPair.getSaveAs().contains(localLink.toUpperCase()))
+                        curPair.addDestination(localLink.toUpperCase());
                     queue.remove(i);
                     newPair = curPair;
                     break;

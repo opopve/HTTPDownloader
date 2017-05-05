@@ -53,7 +53,7 @@ public class FileUtils {
      * @throws IOException If an I/O error occurs
      */
     public static void fileCopy(String sourcePath, String destinationPath) throws IOException {
-        byte[] buffer = new byte[10240];
+        byte[] buffer = new byte[1024];
         int count;
         BufferedInputStream localSource = null;
         BufferedOutputStream localOutput = null;
@@ -64,6 +64,7 @@ public class FileUtils {
                 localOutput.write(buffer, 0, count);
             }
         } finally {
+            localOutput.flush();
             localOutput.close();
             localSource.close();
         }
@@ -138,9 +139,9 @@ public class FileUtils {
     }
 
     /**
-     * The method downloads a file using HTTP protocol and sets to instance of {@link Statistic} following information:
+     * The method checks local paths, then downloads file using HTTP protocol and sends to instance of
+     * {@link Statistic} following information:
      * -- in case of success:
-     * - size available for download
      * - size downloaded
      * - source HTTP link
      * - number of files (if one link needs to be downloaded to several paths)
@@ -148,7 +149,7 @@ public class FileUtils {
      * -- in case of error:
      * - source HTTP link
      * - error message
-     * - paths to download the file
+     * - paths to downloaded file and its copy(ies).
      *
      * @param httpLink   - HTTP link to file
      * @param localPaths - one or several local paths to save files
@@ -157,16 +158,27 @@ public class FileUtils {
     public static void downloadFile(String httpLink, ArrayList<String> localPaths, Statistic stat) {
         int count;
         int bytesDownloaded = 0;
-        int bytesAvailable = -1;
         byte[] buffer = new byte[1024];
         StringBuilder localPathsToString = null;
+
+        for (int i = 0; i < localPaths.size(); i++) {        //checking if all links in localPaths are valid
+            try {
+                if (localPaths.get(i).indexOf('/') >= 0 || localPaths.get(i).contains("\\\\"))
+                    throw new IOException("Invalid character '/' or '\\\\'");
+                File file = new File(localPaths.get(i));
+                file.createNewFile();
+                file.delete();
+            } catch (IOException e) {
+                stat.onError(httpLink, localPaths.get(i), e.getLocalizedMessage());  //removing of invalid links from the list
+                localPaths.remove(i);                                //and making record to stat and then to log file
+                i = -1;
+                if (localPaths.size() == 0) return;
+            }
+        }
 
         try (BufferedInputStream inputStream = new BufferedInputStream(new URL(httpLink).openStream());
              BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(localPaths.get(0)))
         ) {
-            HttpURLConnection connection = (HttpURLConnection) (new URL(httpLink)).openConnection();
-            bytesAvailable = connection.getContentLength();
-            connection.disconnect();
             while ((count = inputStream.read(buffer, 0, buffer.length)) != -1) {
                 outputStream.write(buffer, 0, count);
                 bytesDownloaded += count;
@@ -178,13 +190,14 @@ public class FileUtils {
                     localPathsToString.append(", ").append(localPaths.get(j));
                     try {
                         FileUtils.fileCopy(localPaths.get(0), localPaths.get(j));
+//                        Files.copy(new File(localPaths.get(0)).toPath(), new File(localPaths.get(j)).toPath());
                         nrOfFiles = j;
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }
-            stat.onDownload(bytesDownloaded, bytesAvailable, httpLink, localPathsToString.toString(), nrOfFiles);
+            stat.onDownload(bytesDownloaded, httpLink, localPathsToString.toString(), nrOfFiles);
         } catch (IOException e) {
             stat.onError(httpLink, localPaths.get(0), e.getLocalizedMessage());
         }
@@ -214,5 +227,23 @@ public class FileUtils {
     public static String getDateTime(boolean showDelimiters) {
         SimpleDateFormat sdf = new SimpleDateFormat(showDelimiters ? "yyyy.MM.dd HH:mm:ss" : "yyyyMMddHHmmss");
         return sdf.format(new Date());
+    }
+
+    /**
+     * The method reads size of content by HTTP link to file.
+     *
+     * @param httpLink - HTTP link to file which size we need to know.
+     * @return int size of the file.
+     */
+    public static int fileSizeOnHTTP(String httpLink) {
+        HttpURLConnection connection = null;
+        int bytesAvailable = 0;
+        try {
+            connection = (HttpURLConnection) (new URL(httpLink)).openConnection();
+            bytesAvailable = connection.getContentLength();
+            connection.disconnect();
+        } catch (IOException e) {
+        }
+        return bytesAvailable;
     }
 }

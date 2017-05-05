@@ -1,8 +1,6 @@
 package opopve.olexee;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.HashMap;
 
 /**
  * Class that collects data from other classes and writes useful information to console.
@@ -21,6 +19,7 @@ public class Statistic {
     private int bytesSavedOnDisc = 0;
     private int bytesDownloaded = 0;
     private int bytesToDownload = 0;
+    private HashMap<String, Integer> bytesAvailable = new HashMap<>();
     private boolean areDownloadsFinished = false;
     private long startTime;
 
@@ -110,6 +109,7 @@ public class Statistic {
             statusBar = "[ X X X X X X X X X X ]";
         }
         System.out.print("\r");
+        System.out.print("\r");
         System.out.printf(show.append(statusBar).toString(), nrOfFilesDownloaded, nrOfFilesToDwnl, size, totalSize, kBPerSecond, h, m, s, percent);
     }
 
@@ -128,14 +128,10 @@ public class Statistic {
     public void setSizeAndQuantityToDownload(LinksQueue linksSource) {
         this.nrOfFilesToDwnl = linksSource.size();
         for (Pair p : linksSource) {
-            HttpURLConnection connection = null;
-            try {
-                connection = (HttpURLConnection) (new URL(p.getLink())).openConnection();
-                bytesToDownload += connection.getContentLength();
-                connection.disconnect();
-            } catch (IOException e) {
-//                e.printStackTrace();
-            }
+            String link = p.getLink();
+            int size = FileUtils.fileSizeOnHTTP(link);
+            bytesToDownload += size;
+            this.bytesAvailable.put(link, size);
         }
     }
 
@@ -161,28 +157,23 @@ public class Statistic {
      * The method writes information to console and to log file.
      *
      * @param bytesDownloaded - size of downloaded file
-     * @param bytesAvailable  - original size of file
-     * @param httpLink - source link
-     * @param localPath - local link - destination
-     * @param nrOfFiles -
+     * @param httpLink        - source link
+     * @param localPath       - local link - destination
+     * @param nrOfFiles       -
      */
-    public void onDownload(int bytesDownloaded, int bytesAvailable, String httpLink, String localPath, int nrOfFiles) {
+    public void onDownload(int bytesDownloaded, String httpLink, String localPath, int nrOfFiles) {
         nrOfFilesDownloaded++;
         this.bytesDownloaded += bytesDownloaded;
         toLogFile.append(FileUtils.getDateTime(true))
                 .append("\tSuccess: ")
                 .append(bytesDownloaded)
                 .append(" of ")
-                .append(bytesAvailable)
+                .append(bytesAvailable.get(httpLink))
                 .append(" Bytes downloaded from link '")
                 .append(httpLink)
                 .append("' to '")
-                .append(localPath);
-        if (nrOfFiles == 1) toLogFile.append("'.");
-        else toLogFile.append("' and in ")
-                .append(nrOfFiles - 1)
-                .append(" other files.");
-        toLogFile.append("\n");
+                .append(localPath)
+                .append(".\n");
         showInfo();
     }
 
